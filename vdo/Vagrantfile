@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "centos/7"
+#  config.vm.network "private_network", type: "dhcp"
+	config.vm.network "private_network", ip: "192.168.33.16"
+	config.vm.hostname = "vdo2host2"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.memory = "2048"
+    vb.cpus = "2"  
+   #This is for a hard drive of 20G
+    #dataDisk2 = './dataDisk2.vdi'
+
+ end
+config.vm.provision "shell", inline: <<-SHELL
+   sudo su
+   echo "root" | passwd --stdin root
+   echo "Configuring SSH"
+   sed -i 's/#PermitRootLogin/PermitRootLogin/' /etc/ssh/sshd_config
+   sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+   sed -i 's/PasswordAuthentication no/#PasswordAuthentication no/' /etc/ssh/sshd_config
+   echo "Configured SSH"
+   systemctl restart sshd.service
+   SHELL
+
+  
+
+
+end
