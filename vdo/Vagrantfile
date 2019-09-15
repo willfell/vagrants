@@ -24,6 +24,17 @@ config.vm.provision "shell", inline: <<-SHELL
    sed -i 's/PasswordAuthentication no/#PasswordAuthentication no/' /etc/ssh/sshd_config
    echo "Configured SSH"
    systemctl restart sshd.service
+   yum install openssl-devel
+   yum install zlib-devel bzip2-devel sqlite sqlite-devel openssl-devel
+   yum install gcc
+   cd /usr/src
+   wget https://www.python.org/ftp/python/3.4.8/Python-3.4.8.tgz
+   tar xzf Python-3.4.8.tgz
+   cd Python-3.4.8
+   ./configure --enable-optimizations
+   make altinstall
+   rm Python-3.4.8.tgz 
+   echo "alias python='/usr/local/bin/python3.4'" >> /root/.bashrc
    SHELL
 
   
