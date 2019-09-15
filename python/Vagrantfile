@@ -35,7 +35,6 @@ config.vm.provision "shell", inline: <<-SHELL
    cd Python-3.4.8
    ./configure --enable-optimizations
    make altinstall
-   rm Python-3.4.8.tgz
    echo "alias python='/usr/local/bin/python3.4'" >> /root/.bashrc
 
    SHELL
