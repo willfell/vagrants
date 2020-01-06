@@ -21,5 +21,12 @@ config.vm.provision "shell", inline: <<-SHELL
    sed -i 's/PasswordAuthentication no/#PasswordAuthentication no/' /etc/ssh/sshd_config
    echo "Configured SSH"
    systemctl restart sshd.service
+   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+   python get-pip.py
+   pip install awscli
+   yum install -y wget
+   yum install -y unzip
+   wget https://releases.hashicorp.com/terraform/0.12.2/terraform_0.12.2_linux_amd64.zip
+   unzip ./terraform_0.12.2_linux_amd64.zip -d /usr/local/bin
    SHELL
 end
