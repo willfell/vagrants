@@ -1,0 +1,88 @@
+# -*- mode: ruby -*-
+# vim: ft=ruby
+
+
+# ---- Configuration variables ----
+
+GUI               = false # Enable/Disable GUI
+RAM               = 128   # Default memory size in MB
+
+# Network configuration
+DOMAIN            = ".nat.example.com"
+NETWORK           = "192.168.50."
+NETMASK           = "255.255.255.0"
+
+# Default Virtualbox .box
+# See: https://wiki.debian.org/Teams/Cloud/VagrantBaseBoxes
+#BOX               = 'debian/jessie64'
+BOX               = 'centos/7'
+
+
+HOSTS = {
+   "web" => [NETWORK+"10", RAM, GUI, BOX],
+   "db" => [NETWORK+"11", RAM, GUI, BOX],
+   "backend" => [NETWORK+"12", RAM, GUI, BOX]
+}
+
+ANSIBLE_INVENTORY_DIR = 'ansible/inventory'
+
+# ---- Vagrant configuration ----
+
+Vagrant.configure(2) do |config|
+  HOSTS.each do | (name, cfg) |
+    ipaddr, ram, gui, box = cfg
+
+    config.vm.define name do |machine|
+      machine.vm.box   = box
+      machine.vm.guest = :debian
+
+      machine.vm.provider "virtualbox" do |vbox|
+        vbox.gui    = gui
+        vbox.memory = ram
+        vbox.name = name
+      end
+
+      machine.vm.hostname = name + DOMAIN
+      #machine.vm.network 'private_network', ip: ipaddr, netmask: NETMASK
+      config.vm.network "private_network", ip: ipaddr
+
+      config.vm.provision "shell", inline: <<-SHELL
+      sudo su
+      echo "root" | passwd --stdin root
+      echo "Configuring SSH"
+      sed -i 's/#PermitRootLogin/PermitRootLogin/' /etc/ssh/sshd_config
+      sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+      sed -i 's/PasswordAuthentication no/#PasswordAuthentication no/' /etc/ssh/sshd_config
+      echo "Configured SSH"
+      systemctl restart sshd.service
+      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+      python get-pip.py
+      pip install awscli
+      yum install -y wget
+      yum install -y unzip
+      sudo useradd -m -s /bin/bash will
+      sudo usermod -aG sudo will
+      sudo mkdir /home/will
+      sudo mkdir /home/will/.ssh
+      sudo touch /home/will/.ssh/authorized_keys
+      echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgQt4yk5/14RETh6wlHidGIKWak/xU186fqudyTxooZv23624Wq0BkLt2HAsnsg5zOMF9dUnCY+ofeaqUIUxU/SNMYqur1favExYFLXJzYDbcGHmtVnS4MIkx7IwYb73KAZdG4F7O/qOVP1fT2MMj2zBCV6ykdMuOk2IMUdYXzrpPxGD0cP1UYRfK6ziRQWRW49uyhrYk5d9vPjh1Fug7u2A03f8SiGmBsaumiX1nodhvrmMXJiqYqNGZrltzizI3FjUht0L9WQgzC0UqJkI+OYTDqJ97awryYS/Yh7n7T83Dc+UJBvJx7lzcWdG+U9qCqKlRLB4+jwCSq7h/0qiKaw+3tvf0+UJaN8LDidfgMo1P/dc+DkhrZlNkLA3jwOeX2E6qwaYfE0fJTv58YVWn5nRMBQMehkfTgKlmATjKhRsPGL0bQMBZ36EMliZ9+oWdjSJvhC7+LgOpsZFmr/ghvNKLPOgQq+Q39FqhtNglpU40xUsspJrzGfhPcjZsiP7M= willfellhoelter@gmail.com >> /home/wfellhoelter/.ssh/authorized_keys"
+      sudo chmod 600 /home/will/.ssh/authorized_keys
+      chown will /home/will/.ssh/authorized_keys
+      echo "will     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+      SHELL
+
+    end
+  end # HOSTS-each
+
+  
+end
+
+
+  # config.vm.provision "vai" do |ansible|
+  #   ansible.inventory_dir=ANSIBLE_INVENTORY_DIR
+  #   # optional: add a group listing all vagrant machines
+  #   ansible.groups = {
+  #     'secondGroup' => [ "db" ],
+  #   #  '_provided_by_vagrant_'=> HOSTS.keys,
+  #   }
+  # end
